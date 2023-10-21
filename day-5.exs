@@ -5,8 +5,8 @@
 
 # ?> elixir day-5.exs
 
-defmodule Day5.Part1 do
-  def parse_line(line, {:stack, stacks}) do
+defmodule Day5 do
+  def parse_line(line, {:stack, stacks}, _part) do
     if String.trim(line) == "" do
       {:moves, build_stacks(stacks)}
     else
@@ -14,8 +14,8 @@ defmodule Day5.Part1 do
     end
   end
 
-  def parse_line(line, {:moves, stacks}) do
-    {:moves, line |> parse_move() |> perform_move(stacks)}
+  def parse_line(line, {:moves, stacks}, part) do
+    {:moves, line |> parse_move() |> perform_move(stacks, part)}
   end
 
   def parse_move(move) do
@@ -27,7 +27,7 @@ defmodule Day5.Part1 do
     {count, from, to}
   end
 
-  def perform_move({count, from, to}, stack) do
+  def perform_move({count, from, to}, stack, :part1) do
     from_stack = Map.get(stack, from)
     to_stack = Map.get(stack, to)
 
@@ -42,6 +42,22 @@ defmodule Day5.Part1 do
     stack
     |> Map.put(from, from_stack)
     |> Map.put(to, to_stack)
+  end
+
+  def perform_move({count, from, to}, stack, :part2) do
+    from_stack = Map.get(stack, from)
+    to_stack = Map.get(stack, to)
+
+    {from_stack, items} =
+      Enum.reduce(1..count, {from_stack, []}, fn _, {from_stack, items} ->
+        {item, from_stack} = List.pop_at(from_stack, -1)
+        
+        {from_stack, items ++ [item]}
+      end)
+
+    stack
+    |> Map.put(from, from_stack)
+    |> Map.put(to, to_stack ++ Enum.reverse(items))
   end
 
   def parse_row(row) do
@@ -74,14 +90,15 @@ defmodule Day5.Part1 do
     |> Enum.reject(&is_nil/1)
   end
 
-  def run(input_file) do
+  def run(input_file, part) do
     input_file
     |> File.stream!()
-    |> Enum.reduce({:stack, []}, &parse_line/2)
+    |> Enum.reduce({:stack, []}, fn line, acc -> parse_line(line, acc, part) end)
     |> elem(1)
     |> Enum.map(fn {_k, v}-> Enum.at(v, -1) end)
     |> Enum.join()
   end
 end
 
-Day5.Part1.run("inputs/day-5.txt") |> IO.inspect(label: "part-1 result")
+Day5.run("inputs/day-5.txt", :part1) |> IO.inspect(label: "part-1 result")
+Day5.run("inputs/day-5.txt", :part2) |> IO.inspect(label: "part-2 result")
